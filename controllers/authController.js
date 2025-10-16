@@ -36,17 +36,23 @@ exports.googleLogin = async (req, res) => {
         );
         user.is_verified = true;
       }
+      //Mark user as logged in
+      await pool.query("UPDATE users SET is_logged_in = 1 WHERE id = ?", [
+        user.id,
+      ]);
+      user.is_logged_in = 1;
     } else {
       // Insert new user without password/OTP
       const [result] = await pool.query(
-        "INSERT INTO users (username, email, password_hash, is_verified) VALUES (?, ?, ?, ?)",
-        [name || "GoogleUser", email, "", true]
+        "INSERT INTO users (username, email, password_hash, is_verified, is_logged_in) VALUES (?, ?, ?, ?, ?)",
+        [name || "GoogleUser", email, "", true, 1]
       );
       user = {
         id: result.insertId,
         username: name || "GoogleUser",
         email,
         is_verified: true,
+        is_logged_in: 1,
       };
     }
 
@@ -60,6 +66,7 @@ exports.googleLogin = async (req, res) => {
         username: user.username,
         email: user.email,
         is_verified: true,
+        is_logged_in: 1,
       },
     });
   } catch (err) {

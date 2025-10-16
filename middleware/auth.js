@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const pool = require('../db');
 
 const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -14,6 +15,28 @@ const authenticateToken = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Check if user is logged in
+    const [rows] = await pool.query(
+      'SELECT is_logged_in FROM users WHERE id = ?',
+      [decoded.userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+
+    if (rows[0].is_logged_in === 0) {
+      return res.status(403).json({
+        success: false,
+        message: 'User is logged out',
+        error: 'LOGGED_OUT'
+      });
+    }
+
     req.user = decoded;
     next();
   } catch (error) {

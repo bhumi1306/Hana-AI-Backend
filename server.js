@@ -5,15 +5,25 @@ const rateLimit = require('express-rate-limit');
 const express = require('express');
 const bodyParser = require('body-parser');
 const { testConnection } = require('./config/database');
-const chatHistoryRoutes = require('./routes/chatHistory');
+const fileUpload = require("express-fileupload");
 
+const path = require("path");
+
+const chatHistoryRoutes = require('./routes/chatHistory');
 const registerRoutes = require('./routes/register');
 const otpRoutes = require('./routes/verifyOtp');
 const loginRoutes = require('./routes/login');
+const logoutRoutes = require('./routes/logout');
 const resendOtpRoutes = require('./routes/resendOtp');
 const googleAuthRoutes = require('./routes/googleAuth');
+const profileRoutes = require('./routes/profile');
+const documentRoutes = require("./routes/documentRoutes");
+const imageRoutes = require("./routes/imageRoutes");
 
 const app = express();
+app.use(express.json());
+app.use(cors());
+app.use(fileUpload());
 
 // Body parser middleware (moved up before routes)
 app.use(bodyParser.json());
@@ -44,9 +54,16 @@ app.use('/api/', limiter);
 app.use('/api', registerRoutes);
 app.use('/api', otpRoutes);
 app.use('/api', loginRoutes);
+app.use('/api', logoutRoutes);
 app.use('/api', resendOtpRoutes);
 app.use('/api', googleAuthRoutes);
 app.use('/api/chat-history', chatHistoryRoutes);
+app.use('/api/profile', profileRoutes);
+// Serve uploaded images
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+app.use("/api/documents", documentRoutes);
+app.use("/api/images", imageRoutes);
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
